@@ -1,3 +1,4 @@
+mod domain;
 mod routes;
 
 use axum::{
@@ -18,7 +19,7 @@ async fn main() {
         // `GET /` goes to `root`
         .route("/", get(root))
         // `POST /users` goes to `create_user`
-        .route("/users", post(create_user));
+        .route("/tokens", post(create_user));
 
     // run our app with hyper
     // `axum::Server` is a re-export of `hyper::Server`
