@@ -19,6 +19,12 @@ impl std::str::FromStr for MoodleToken {
     }
 }
 
+impl AsRef<[u8]> for MoodleToken {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
 #[cfg(test)]
 mod test {
     use claims::{assert_err, assert_ok};

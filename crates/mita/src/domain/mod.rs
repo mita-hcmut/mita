@@ -1,1 +1,1 @@
-mod moodle_token;
+pub mod moodle_token;
