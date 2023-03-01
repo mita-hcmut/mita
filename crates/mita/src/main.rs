@@ -8,7 +8,13 @@ use axum::{
 use sqlx::sqlite::SqlitePoolOptions;
 use std::{net::SocketAddr, time::Duration};
 
-use crate::routes::{get_tokens::get_tokens, put_token::put_token, root};
+use crate::routes::{root, token::put::register_token};
+
+#[derive(Clone)]
+pub struct AppState {
+    pub http_client: reqwest::Client,
+    pub pool: sqlx::SqlitePool,
+}
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -17,16 +23,18 @@ async fn main() -> eyre::Result<()> {
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
         .acquire_timeout(Duration::from_secs(5))
-        .connect(env!("DATABASE_URL"))
+        // .connect(option_env!("DATABASE_URL").unwrap())
+        .connect("sqlite::memory:")
         .await?;
+
+    let http_client = reqwest::Client::builder().build().unwrap();
 
     sqlx::migrate!("../../db/migrations").run(&pool).await?;
 
     let app = Router::new()
         .route("/", get(root))
-        .route("/token", put(put_token))
-        .route("/tokens", get(get_tokens))
-        .with_state(pool);
+        .route("/token", put(register_token))
+        .with_state(AppState { pool, http_client });
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
 

@@ -1,5 +1,4 @@
-pub mod put_token;
-pub mod get_tokens;
+pub mod token;
 
 // basic handler that responds with a static string
 pub async fn root() -> &'static str {
