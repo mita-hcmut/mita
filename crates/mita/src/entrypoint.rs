@@ -1,29 +1,54 @@
-use std::{net::SocketAddr, time::Duration};
+use std::{future::Future, net::SocketAddr, time::Duration};
 
+use eyre::WrapErr;
+use futures::future::BoxFuture;
 use sqlx::sqlite::SqlitePoolOptions;
 
-use crate::{app_state::AppState, routes::router::app_router};
+use crate::{app_state::AppState, config::Config, routes::router::app_router};
 
-pub async fn build() -> eyre::Result<()> {
-    let pool = SqlitePoolOptions::new()
-        .max_connections(5)
-        .acquire_timeout(Duration::from_secs(5))
-        // .connect(option_env!("DATABASE_URL").unwrap())
-        .connect("sqlite::memory:")
-        .await?;
+pub struct Server {
+    addr: SocketAddr,
+    axum_server: BoxFuture<'static, eyre::Result<()>>,
+}
 
-    sqlx::migrate!("../../db/migrations").run(&pool).await?;
+impl Server {
+    pub async fn build(config: &Config) -> eyre::Result<Self> {
+        let pool = SqlitePoolOptions::new()
+            .max_connections(5)
+            .acquire_timeout(Duration::from_secs(5))
+            // .connect(option_env!("DATABASE_URL").unwrap())
+            .connect("sqlite::memory:")
+            .await?;
 
-    let http_client = reqwest::Client::builder().build().unwrap();
+        sqlx::migrate!("../../db/migrations").run(&pool).await?;
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+        let http_client = reqwest::Client::builder().build().unwrap();
 
-    tracing::debug!("listening on {}", addr);
+        let app = app_router().with_state(AppState { http_client, pool });
 
-    let app = app_router().with_state(AppState { http_client, pool });
+        let addr = format!("{}:{}", &config.app.hostname, config.app.port).parse()?;
+        let server = axum::Server::bind(&addr).serve(app.into_make_service());
 
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await?;
-    Ok(())
+        tracing::info!("listening on {}", server.local_addr());
+
+        Ok(Self {
+            addr: server.local_addr(),
+            axum_server: Box::pin(async { server.await.wrap_err("error running server") }),
+        })
+    }
+
+    pub fn addr(&self) -> SocketAddr {
+        self.addr
+    }
+}
+
+impl Future for Server {
+    type Output = eyre::Result<()>;
+
+    fn poll(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Self::Output> {
+        self.axum_server.as_mut().poll(cx)
+    }
 }

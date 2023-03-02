@@ -1,0 +1,23 @@
+[default.app]
+hostname = "127.0.0.1"
+port = 8080
+
+[default.database]
+url = "sqlite::memory:"
+secure = false
+
+[default.vault]
+url = "http://localhost:8200"
+
+# TEST PROFILE
+
+[test.app]
+port = 0 # let OS pick the port
+
+[test.oauth2]
+url = "http://localhost:8443/default"
+client_id = "client_id"
+
+# PROD PROFILE
+
+# TODO
