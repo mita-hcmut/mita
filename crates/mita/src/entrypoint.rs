@@ -1,4 +1,4 @@
-use std::{future::Future, net::SocketAddr, time::Duration};
+use std::{future::Future, net::SocketAddr, sync::Arc, time::Duration};
 
 use eyre::WrapErr;
 use futures::future::BoxFuture;
@@ -12,21 +12,26 @@ pub struct Server {
 }
 
 impl Server {
-    pub async fn build(config: &Config) -> eyre::Result<Self> {
+    pub async fn build(config: Arc<Config>) -> eyre::Result<Self> {
+        let addr = format!("{}:{}", &config.app.hostname, config.app.port).parse()?;
+
         let pool = SqlitePoolOptions::new()
             .max_connections(5)
             .acquire_timeout(Duration::from_secs(5))
             // .connect(option_env!("DATABASE_URL").unwrap())
-            .connect("sqlite::memory:")
+            .connect(&config.database.url)
             .await?;
 
         sqlx::migrate!("../../db/migrations").run(&pool).await?;
 
         let http_client = reqwest::Client::builder().build().unwrap();
 
-        let app = app_router().with_state(AppState { http_client, pool });
+        let app = app_router().with_state(AppState {
+            http_client,
+            pool,
+            config,
+        });
 
-        let addr = format!("{}:{}", &config.app.hostname, config.app.port).parse()?;
         let server = axum::Server::bind(&addr).serve(app.into_make_service());
 
         tracing::info!("listening on {}", server.local_addr());

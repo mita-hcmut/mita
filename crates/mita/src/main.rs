@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use eyre::Context;
 use mita::{config::Config, entrypoint::Server};
 
@@ -7,7 +9,7 @@ async fn main() -> eyre::Result<()> {
 
     let config = Config::dev().wrap_err("error reading config")?;
 
-    Server::build(&config)
+    Server::build(Arc::new(config))
         .await
         .wrap_err("error trying to build server")?
         .await
