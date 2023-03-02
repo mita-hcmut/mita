@@ -7,9 +7,9 @@ use mita::{config::Config, entrypoint::Server};
 async fn main() -> eyre::Result<()> {
     tracing_subscriber::fmt::init();
 
-    let config = Config::dev().wrap_err("error reading config")?;
+    let config = Config::dev().wrap_err("error reading config")?.leak();
 
-    Server::build(Arc::new(config))
+    Server::build(config)
         .await
         .wrap_err("error trying to build server")?
         .await

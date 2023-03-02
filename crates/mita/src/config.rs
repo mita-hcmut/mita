@@ -54,4 +54,8 @@ impl Config {
             .extract()
             .wrap_err("error reading test config")
     }
+
+    pub fn leak(self) -> &'static Self {
+        Box::leak(Box::new(self))
+    }
 }

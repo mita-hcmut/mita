@@ -12,7 +12,7 @@ pub struct Server {
 }
 
 impl Server {
-    pub async fn build(config: Arc<Config>) -> eyre::Result<Self> {
+    pub async fn build(config: &'static Config) -> eyre::Result<Self> {
         let addr = format!("{}:{}", &config.app.hostname, config.app.port).parse()?;
 
         let pool = SqlitePoolOptions::new()

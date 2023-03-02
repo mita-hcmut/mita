@@ -11,8 +11,8 @@ mod helper;
 
 #[tokio::test]
 pub async fn oauth2() -> eyre::Result<()> {
-    let config = Config::test()?;
-    let server = Server::build(Arc::new(config)).await?;
+    let config = Config::test()?.leak();
+    let server = Server::build(config).await?;
     let addr = server.addr();
 
     tokio::spawn(server);
