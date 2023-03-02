@@ -2,19 +2,19 @@ use axum::{extract::State, Form};
 use axum_auth::AuthBearer;
 use reqwest::StatusCode;
 use secrecy::{ExposeSecret, Secret};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::app_state::AppState;
 
 #[derive(Deserialize)]
-struct VaultLoginResponse {
-    auth: VaultLoginResponseAuth,
+pub struct VaultLoginResponse {
+    pub auth: VaultLoginResponseAuth,
 }
 
 #[derive(Deserialize)]
-struct VaultLoginResponseAuth {
-    client_token: Secret<String>,
-    entity_id: Secret<String>,
+pub struct VaultLoginResponseAuth {
+    pub client_token: Secret<String>,
+    pub entity_id: Secret<String>,
 }
 
 #[derive(Deserialize)]

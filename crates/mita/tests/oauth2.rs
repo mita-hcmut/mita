@@ -1,30 +1,54 @@
 use std::sync::Arc;
 
 use eyre::Context;
+use fake::Fake;
 use mita::{config::Config, entrypoint::Server};
 use proptest::{
     strategy::{Strategy, ValueTree},
     test_runner::TestRunner,
 };
+use serde_json::json;
+use wiremock::{matchers, Mock, MockServer, ResponseTemplate};
 
 mod helper;
 
 #[tokio::test]
 pub async fn oauth2() -> eyre::Result<()> {
-    let config = Config::test()?.leak();
-    let server = Server::build(config).await?;
+    let mut runner = TestRunner::default();
+    let token = "[a-f0-9]{32}"
+        .new_tree(&mut runner)
+        .map_err(|e| eyre::eyre!(e))?
+        .current();
+
+    let mock_server = MockServer::start().await;
+    Mock::given(matchers::method("POST"))
+        .and(matchers::path("/webservice/rest/server.php"))
+        .and(matchers::header(
+            "Content-Type",
+            "application/x-www-form-urlencoded",
+        ))
+        .and(matchers::body_string_contains(format!("wstoken={token}")))
+        .and(matchers::body_string_contains(
+            "wsfunction=core_webservice_get_site_info",
+        ))
+        .and(matchers::body_string_contains("moodlewsrestformat=json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&json!({
+            "fullname": fake::faker::name::en::Name().fake::<String>(),
+        })))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let mut config = Config::test()?;
+    config.moodle.url = format!("http://{}", mock_server.address());
+    let server = Server::build(config.leak()).await?;
+
     let addr = server.addr();
 
     tokio::spawn(server);
 
     let id_token = helper::oauth2::get_code("khang", "").await.id_token;
     let client = reqwest::Client::new();
-    let mut runner = TestRunner::default();
-
-    let token = "[a-f0-9]{32}"
-        .new_tree(&mut runner)
-        .map_err(|e| eyre::eyre!(e))?
-        .current();
 
     client
         .put(format!("http://{addr}/token"))

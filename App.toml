@@ -9,6 +9,9 @@ secure = false
 [default.vault]
 url = "http://localhost:8200"
 
+[default.moodle]
+url = "http://localhost:0" # should be set using mock server
+
 # TEST PROFILE
 
 [test.app]

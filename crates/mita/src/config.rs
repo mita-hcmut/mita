@@ -11,6 +11,7 @@ pub struct Config {
     pub database: DatabaseConfig,
     pub vault: VaultConfig,
     pub oauth2: Option<OAuth2Config>,
+    pub moodle: MoodleConfig,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -33,6 +34,11 @@ pub struct VaultConfig {
 pub struct OAuth2Config {
     pub url: String,
     pub client_id: String,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct MoodleConfig {
+    pub url: String,
 }
 
 impl Config {
