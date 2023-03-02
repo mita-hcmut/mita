@@ -17,7 +17,7 @@ pub async fn oauth2() -> eyre::Result<()> {
 
     tokio::spawn(server);
 
-    let res = helper::oauth2::get_code("khang", "").await;
+    let id_token = helper::oauth2::get_code("khang", "").await.id_token;
     let client = reqwest::Client::new();
     let mut runner = TestRunner::default();
 
@@ -26,15 +26,25 @@ pub async fn oauth2() -> eyre::Result<()> {
         .map_err(|e| eyre::eyre!(e))?
         .current();
 
-    let res = client
+    client
         .put(format!("http://{addr}/token"))
-        .bearer_auth(&res.id_token)
+        .bearer_auth(&id_token)
         .form(&[("moodle_token", &token)])
         .send()
         .await
-        .wrap_err_with(|| format!("error putting token {token}"))?;
+        .wrap_err_with(|| format!("error putting token {token}"))?
+        .error_for_status()?;
 
-    dbg!(res);
+    let res = client
+        .get(format!("http://{addr}/info"))
+        .bearer_auth(&id_token)
+        .send()
+        .await
+        .wrap_err("error getting user info")?
+        .error_for_status()?;
+
+    dbg!(&res);
+    dbg!(res.text().await.unwrap());
 
     Ok(())
 }
