@@ -3,7 +3,7 @@ use axum_auth::AuthBearer;
 use reqwest::StatusCode;
 use serde::Serialize;
 
-use crate::AppState;
+use crate::app_state::AppState;
 
 pub async fn register_token(AuthBearer(token): AuthBearer, state: State<AppState>) -> StatusCode {
     #[derive(Serialize)]
