@@ -1,0 +1,10 @@
+[database]
+url = "sqlite::memory:"
+
+[vault]
+hostname = "localhost"
+protocol = "http"
+
+[oauth2]
+address = "http://localhost:8443/default"
+client_id = "client_id"

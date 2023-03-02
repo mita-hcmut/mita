@@ -1,0 +1,6 @@
+[database]
+# url = "", get from env var
+
+[vault]
+# hostname = "", get from env var
+protocol = "https"
