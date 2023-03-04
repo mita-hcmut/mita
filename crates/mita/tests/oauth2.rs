@@ -5,7 +5,7 @@ use proptest::{
     strategy::{Strategy, ValueTree},
     test_runner::TestRunner,
 };
-use serde_json::json;
+use serde_json::{json, Value};
 use wiremock::{matchers, Mock, MockServer, ResponseTemplate};
 
 mod helper;
@@ -21,6 +21,7 @@ pub async fn oauth2() -> eyre::Result<()> {
         .current();
 
     let mock_server = MockServer::start().await;
+    let fullname = fake::faker::name::en::Name().fake::<String>();
     Mock::given(matchers::method("POST"))
         .and(matchers::path("/webservice/rest/server.php"))
         .and(matchers::header(
@@ -33,7 +34,7 @@ pub async fn oauth2() -> eyre::Result<()> {
         ))
         .and(matchers::body_string_contains("moodlewsrestformat=json"))
         .respond_with(ResponseTemplate::new(200).set_body_json(&json!({
-            "fullname": fake::faker::name::en::Name().fake::<String>(),
+            "fullname": fullname,
         })))
         .expect(1)
         .mount(&mock_server)
@@ -50,7 +51,7 @@ pub async fn oauth2() -> eyre::Result<()> {
     let id_token = helper::oauth2::get_code("khang", "").await.id_token;
     let client = reqwest::Client::new();
 
-    let res = client
+    client
         .put(format!("http://{addr}/token"))
         .bearer_auth(&id_token)
         .form(&[("moodle_token", &token)])
@@ -58,9 +59,6 @@ pub async fn oauth2() -> eyre::Result<()> {
         .await
         .wrap_err_with(|| format!("error putting token {token}"))?
         .error_for_status()?;
-
-    dbg!(&res);
-    dbg!(res.text().await.unwrap());
 
     let res = client
         .get(format!("http://{addr}/info"))
@@ -70,8 +68,9 @@ pub async fn oauth2() -> eyre::Result<()> {
         .wrap_err("error getting user info")?
         .error_for_status()?;
 
-    dbg!(&res);
-    dbg!(res.text().await.unwrap());
+    let body: Value = res.json().await?;
+
+    assert_eq!(body["fullname"], fullname);
 
     Ok(())
 }
