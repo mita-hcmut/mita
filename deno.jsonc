@@ -1,3 +1,8 @@
 {
-  "tasks": {}
+  "tasks": {
+    "dev": "deno task up && deno task init-vault",
+    "up": "docker compose up -d",
+    "stop": "docker compose stop",
+    "init-vault": "cat scripts/init_vault.sh | docker exec -i mita-vault-1 sh"
+  }
 }
