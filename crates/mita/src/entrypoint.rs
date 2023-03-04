@@ -1,4 +1,4 @@
-use std::{future::Future, net::SocketAddr, sync::Arc, time::Duration};
+use std::{future::Future, net::SocketAddr, time::Duration};
 
 use eyre::WrapErr;
 use futures::future::BoxFuture;
@@ -18,7 +18,6 @@ impl Server {
         let pool = SqlitePoolOptions::new()
             .max_connections(5)
             .acquire_timeout(Duration::from_secs(5))
-            // .connect(option_env!("DATABASE_URL").unwrap())
             .connect(&config.database.url)
             .await?;
 
@@ -26,7 +25,7 @@ impl Server {
 
         let http_client = reqwest::Client::builder().build().unwrap();
 
-        let app = app_router().with_state(AppState {
+        let app = app_router(AppState {
             http_client,
             pool,
             config,

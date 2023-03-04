@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = { version = "0.6.7", features = ["form"] }
+axum = { version = "0.6.7", features = ["form", "macros"] }
 axum-auth = { version = "0.4.0", default-features = false, features = ["auth-bearer"] }
 eyre = "0.6.8"
 figment = { version = "0.10.8", features = ["toml", "env"] }
@@ -18,7 +18,10 @@ secrecy = { version = "0.8.0", features = ["serde"] }
 serde = { version = "1.0.152", features = ["derive"] }
 serde_json = "1.0.93"
 sqlx = { version = "0.6.2", features = ["runtime-tokio-rustls", "sqlite"] }
+thiserror = "1.0.38"
 tokio = { version = "1.25.0", features = ["rt-multi-thread", "macros"] }
+tower = "0.4.13"
+tower-http = { version = "0.4.0", features = ["trace"] }
 tracing = "0.1.37"
 tracing-subscriber = "0.3.16"
 

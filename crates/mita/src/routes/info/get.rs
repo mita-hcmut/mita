@@ -1,35 +1,27 @@
-use axum::extract::State;
-use axum_auth::AuthBearer;
+use axum::{extract::State, Extension};
 use reqwest::StatusCode;
 use secrecy::ExposeSecret;
 
-use crate::{app_state::AppState, routes::token::put::VaultLoginResponse};
+use crate::{
+    app_state::AppState,
+    middlewares::vault::{ClientToken, EntityId},
+};
 
-pub async fn get_info(id_token: AuthBearer, state: State<AppState>) -> StatusCode {
-    // get moodle token from vault
-    let res = state
-        .0
-        .http_client
-        .post(format!("{}/v1/auth/jwt/login", state.0.config.vault.url))
-        .json(&serde_json::json!({
-            "role": "user",
-            "jwt": &id_token.0,
-        }))
-        .send()
-        .await
-        .unwrap();
-
-    let res: VaultLoginResponse = res.json().await.unwrap();
-
+#[axum::debug_handler]
+pub async fn get_info(
+    client_token: Extension<ClientToken>,
+    entity_id: Extension<EntityId>,
+    state: State<AppState>,
+) -> StatusCode {
     let res = state
         .0
         .http_client
         .get(format!(
             "{}/v1/secret/data/{}",
             state.0.config.vault.url,
-            res.auth.entity_id.expose_secret(),
+            entity_id.0 .0.expose_secret(),
         ))
-        .header("X-Vault-Token", res.auth.client_token.expose_secret())
+        .header("X-Vault-Token", client_token.0 .0.expose_secret())
         .send()
         .await
         .unwrap();

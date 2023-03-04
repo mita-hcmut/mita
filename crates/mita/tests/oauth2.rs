@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use eyre::Context;
 use fake::Fake;
 use mita::{config::Config, entrypoint::Server};
@@ -14,6 +12,8 @@ mod helper;
 
 #[tokio::test]
 pub async fn oauth2() -> eyre::Result<()> {
+    tracing_subscriber::fmt::init();
+
     let mut runner = TestRunner::default();
     let token = "[a-f0-9]{32}"
         .new_tree(&mut runner)
@@ -50,7 +50,7 @@ pub async fn oauth2() -> eyre::Result<()> {
     let id_token = helper::oauth2::get_code("khang", "").await.id_token;
     let client = reqwest::Client::new();
 
-    client
+    let res = client
         .put(format!("http://{addr}/token"))
         .bearer_auth(&id_token)
         .form(&[("moodle_token", &token)])
@@ -58,6 +58,9 @@ pub async fn oauth2() -> eyre::Result<()> {
         .await
         .wrap_err_with(|| format!("error putting token {token}"))?
         .error_for_status()?;
+
+    dbg!(&res);
+    dbg!(res.text().await.unwrap());
 
     let res = client
         .get(format!("http://{addr}/info"))
@@ -69,6 +72,40 @@ pub async fn oauth2() -> eyre::Result<()> {
 
     dbg!(&res);
     dbg!(res.text().await.unwrap());
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn shoud_error_when_no_token_provided() -> eyre::Result<()> {
+    tracing_subscriber::fmt::init();
+
+    let config = Config::test()?;
+    let server = Server::build(config.leak()).await?;
+
+    let addr = server.addr();
+
+    tokio::spawn(server);
+
+    let client = reqwest::Client::new();
+
+    let res = client
+        .get(format!("http://{addr}/info"))
+        .bearer_auth("invalid_token")
+        .send()
+        .await
+        .wrap_err("error getting user info")?;
+
+    assert_eq!(res.status(), 400);
+
+    let res = client
+        .get(format!("http://{addr}/info"))
+        .bearer_auth("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c")
+        .send()
+        .await
+        .wrap_err("error getting user info")?;
+
+    assert_eq!(res.status(), 400);
 
     Ok(())
 }
