@@ -78,9 +78,27 @@ async fn shoud_400_when_invalid_token_provided() -> eyre::Result<()> {
         &EncodingKey::from_secret(b"secret"),
     )
     .unwrap();
+
+    Mock::given(matchers::any())
+        .respond_with(ResponseTemplate::new(200))
+        .expect(0)
+        .mount(&app.moodle_server)
+        .await;
+
     let res = app.get_info().await?;
 
     assert_eq!(res.status(), 400);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn shoud_404_when_unregistered_token_provided() -> eyre::Result<()> {
+    let mut app = TestApp::new().await?;
+    app.id_token = helper::oauth2::get_code("guest", "").await.id_token;
+    let res = app.get_info().await?;
+
+    assert_eq!(res.status(), 404);
 
     Ok(())
 }
