@@ -1,7 +1,7 @@
 use axum::{
     extract::State,
     response::{IntoResponse, Response},
-    Extension, Json,
+    Extension,
 };
 use reqwest::{header, StatusCode};
 use secrecy::ExposeSecret;
@@ -52,37 +52,16 @@ pub async fn get_info(
 
 #[derive(Error, Debug)]
 pub enum InfoError {
-    #[error("unexpected error")]
-    Unexpected(#[from] eyre::Error),
-    #[error("token not found")]
-    TokenNotFound,
-}
-
-impl From<VaultError> for InfoError {
-    fn from(e: VaultError) -> Self {
-        match e {
-            VaultError::Unexpected(e) => InfoError::Unexpected(e),
-            VaultError::Status(status, _) => {
-                if status == StatusCode::NOT_FOUND {
-                    return InfoError::TokenNotFound;
-                }
-                eyre::eyre!(e).into()
-            }
-        }
-    }
+    #[error("error getting moodle token")]
+    GetMoodleToken(#[from] VaultError),
 }
 
 impl IntoResponse for InfoError {
     fn into_response(self) -> Response {
-        let errors = match &self {
-            InfoError::Unexpected(e) => vec![e.to_string()],
-            InfoError::TokenNotFound => vec![self.to_string()],
+        let status = match &self {
+            InfoError::GetMoodleToken(e) => e.status(),
         };
-        let status = match self {
-            InfoError::Unexpected(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            InfoError::TokenNotFound => StatusCode::NOT_FOUND,
-        };
-        tracing::error!(%status, ?errors);
-        (status, Json(serde_json::json!({ "errors": errors }))).into_response()
+        tracing::error!(service = "vault", %status, error = ?self);
+        status.into_response()
     }
 }

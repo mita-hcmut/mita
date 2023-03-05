@@ -1,10 +1,10 @@
 use async_trait::async_trait;
 use eyre::Context;
-use reqwest::{Response, StatusCode};
+use reqwest::StatusCode;
 use secrecy::{ExposeSecret, Secret};
 use serde::Deserialize;
 use thiserror::Error;
-use tracing::Instrument;
+use tracing::{info_span, Instrument};
 use url::Url;
 
 use crate::config::VaultConfig;
@@ -45,7 +45,7 @@ impl Client {
                 "jwt": &id_token,
             }))
             .send()
-            .instrument(tracing::info_span!("sending request to vault"))
+            .instrument(info_span!("logging into vault using jwt"))
             .await
             .wrap_err("error sending request to vault")?
             .try_into_vault_error()
@@ -83,6 +83,7 @@ impl Client {
                 }
             }))
             .send()
+            .instrument(info_span!("putting moodle token in vault"))
             .await
             .wrap_err("error putting token in vault")?
             .try_into_vault_error()
@@ -108,6 +109,7 @@ impl Client {
             .get(self.data_path()?)
             .header("X-Vault-Token", self.client_token.0.expose_secret())
             .send()
+            .instrument(info_span!("getting moodle token from vault"))
             .await
             .wrap_err("error getting token from vault")?
             .try_into_vault_error()
@@ -140,7 +142,7 @@ trait TryIntoVaultError: Sized {
 }
 
 #[async_trait]
-impl TryIntoVaultError for Response {
+impl TryIntoVaultError for reqwest::Response {
     async fn try_into_vault_error(self) -> Result<Self, VaultError> {
         if self.error_for_status_ref().is_ok() {
             return Ok(self);
@@ -159,6 +161,15 @@ impl TryIntoVaultError for Response {
             .wrap_err("error deserializing error body")?;
 
         Err(VaultError::Status(status, body.errors))
+    }
+}
+
+impl VaultError {
+    pub fn status(&self) -> StatusCode {
+        match self {
+            &Self::Status(status, _) => status,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        }
     }
 }
 

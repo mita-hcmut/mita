@@ -3,10 +3,8 @@ use axum::{
     http::Request,
     middleware::Next,
     response::{IntoResponse, Response},
-    Json,
 };
 use axum_auth::AuthBearer;
-use reqwest::StatusCode;
 use thiserror::Error;
 
 use crate::{
@@ -32,15 +30,8 @@ pub struct AuthError(#[from] VaultError);
 
 impl IntoResponse for AuthError {
     fn into_response(self) -> Response {
-        match self.0 {
-            VaultError::Unexpected(e) => {
-                tracing::error!("unexpected error: {}", e);
-                (StatusCode::INTERNAL_SERVER_ERROR, Json("unexpected error")).into_response()
-            }
-            VaultError::Status(status, errors) => {
-                tracing::error!("status {}, errors: {:?}", status, errors);
-                (status, Json(serde_json::json!({ "errors": errors }))).into_response()
-            }
-        }
+        let status = self.0.status();
+        tracing::error!(service = "vault", %status, error = ?self, "error logging into vault");
+        status.into_response()
     }
 }

@@ -102,3 +102,11 @@ async fn shoud_404_when_unregistered_token_provided() -> eyre::Result<()> {
 
     Ok(())
 }
+
+#[tokio::test]
+async fn should_400_when_no_bearer_header() -> eyre::Result<()> {
+    let app = TestApp::new().await?;
+    let res = app.put_token_without_bearer("???".into()).await?;
+    assert_eq!(res.status(), 400);
+    Ok(())
+}

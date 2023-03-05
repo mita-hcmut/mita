@@ -41,6 +41,15 @@ impl TestApp {
         })
     }
 
+    pub async fn put_token_without_bearer(&self, token: String) -> eyre::Result<reqwest::Response> {
+        self.http_client
+            .put(format!("http://{}/token", self.addr))
+            .form(&[("moodle_token", &token)])
+            .send()
+            .await
+            .wrap_err_with(|| format!("error putting token {token}"))
+    }
+
     pub async fn put_token(&self, token: String) -> eyre::Result<reqwest::Response> {
         self.http_client
             .put(format!("http://{}/token", self.addr))

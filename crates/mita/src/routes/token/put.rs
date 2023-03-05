@@ -1,4 +1,4 @@
-use axum::{response::IntoResponse, response::Response, Extension, Form, Json};
+use axum::{response::IntoResponse, response::Response, Extension, Form};
 use reqwest::StatusCode;
 use secrecy::Secret;
 use serde::Deserialize;
@@ -11,6 +11,7 @@ pub struct FormData {
     moodle_token: Secret<String>,
 }
 
+#[axum::debug_handler]
 #[tracing::instrument(skip(vault, form))]
 pub async fn register_token(
     vault: Extension<vault::Client>,
@@ -23,25 +24,16 @@ pub async fn register_token(
 
 #[derive(Error, Debug)]
 pub enum RegisterError {
-    #[error("unexpected error")]
-    Unexpected(#[from] eyre::Error),
-}
-
-impl From<VaultError> for RegisterError {
-    fn from(e: VaultError) -> Self {
-        RegisterError::Unexpected(e.into())
-    }
+    #[error("error putting moodle token")]
+    PutMoodleToken(#[from] VaultError),
 }
 
 impl IntoResponse for RegisterError {
     fn into_response(self) -> Response {
-        let errors = match &self {
-            RegisterError::Unexpected(e) => vec![e.to_string()],
+        let status = match &self {
+            Self::PutMoodleToken(e) => e.status(),
         };
-        let status = match self {
-            RegisterError::Unexpected(_) => StatusCode::INTERNAL_SERVER_ERROR,
-        };
-        tracing::error!(%status, ?errors);
-        (status, Json(serde_json::json!({ "errors": errors }))).into_response()
+        tracing::error!(service = "vault", %status, error = ?self);
+        status.into_response()
     }
 }
