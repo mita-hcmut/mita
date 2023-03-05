@@ -1,6 +1,6 @@
 use eyre::Context;
 use fake::Fake;
-use mita::{config::Config, entrypoint::Server};
+use mita::{config::Config, entrypoint::Server, telemetry};
 use proptest::{
     strategy::{Strategy, ValueTree},
     test_runner::TestRunner,
@@ -12,7 +12,7 @@ mod helper;
 
 #[tokio::test]
 pub async fn oauth2() -> eyre::Result<()> {
-    tracing_subscriber::fmt::init();
+    let _guard = telemetry::setup();
 
     let mut runner = TestRunner::default();
     let token = "[a-f0-9]{32}"
@@ -77,7 +77,7 @@ pub async fn oauth2() -> eyre::Result<()> {
 
 #[tokio::test]
 async fn shoud_error_when_no_token_provided() -> eyre::Result<()> {
-    tracing_subscriber::fmt::init();
+    telemetry::setup();
 
     let config = Config::test()?;
     let server = Server::build(config.leak()).await?;
@@ -105,6 +105,8 @@ async fn shoud_error_when_no_token_provided() -> eyre::Result<()> {
         .wrap_err("error getting user info")?;
 
     assert_eq!(res.status(), 400);
+
+    tokio::time::sleep(std::time::Duration::from_secs(10)).await;
 
     Ok(())
 }

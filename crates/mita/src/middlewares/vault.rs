@@ -14,6 +14,7 @@ use crate::{
     vault::{self, VaultError},
 };
 
+#[tracing::instrument(skip(state, id_token, req, next))]
 pub async fn authenticate<B>(
     state: State<AppState>,
     id_token: AuthBearer,

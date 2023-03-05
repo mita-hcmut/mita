@@ -9,6 +9,7 @@ use secrecy::ExposeSecret;
 use crate::{app_state::AppState, vault};
 
 #[axum::debug_handler]
+#[tracing::instrument(skip(vault, state))]
 pub async fn get_info(vault: Extension<vault::Client>, state: State<AppState>) -> Response {
     let res = vault.get_moodle_token().await.unwrap();
 

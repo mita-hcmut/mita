@@ -22,9 +22,10 @@ sqlx = { version = "0.6.2", features = ["runtime-tokio-rustls", "sqlite"] }
 thiserror = "1.0.38"
 tokio = { version = "1.25.0", features = ["rt-multi-thread", "macros"] }
 tower = "0.4.13"
-tower-http = { version = "0.4.0", features = ["trace"] }
+tower-http = { version = "0.4.0", features = ["trace", "request-id", "util"] }
 tracing = "0.1.37"
-tracing-subscriber = "0.3.16"
+tracing-chrome = "0.7.1"
+tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 
 [dev-dependencies]
 claims = "0.7.1"

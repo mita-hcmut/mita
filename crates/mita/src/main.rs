@@ -1,9 +1,9 @@
 use eyre::Context;
-use mita::{config::Config, entrypoint::Server};
+use mita::{config::Config, entrypoint::Server, telemetry};
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
-    tracing_subscriber::fmt::init();
+    telemetry::setup();
 
     let config = Config::dev().wrap_err("error reading config")?.leak();
 

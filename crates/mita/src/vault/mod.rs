@@ -4,6 +4,7 @@ use reqwest::{Response, StatusCode};
 use secrecy::{ExposeSecret, Secret};
 use serde::Deserialize;
 use thiserror::Error;
+use tracing::Instrument;
 
 #[derive(Clone)]
 pub struct Client {
@@ -28,6 +29,7 @@ pub enum VaultError {
 }
 
 impl Client {
+    #[tracing::instrument(skip(http_client, url, id_token))]
     pub async fn login(
         http_client: &reqwest::Client,
         url: &'static str,
@@ -40,6 +42,7 @@ impl Client {
                 "jwt": &id_token,
             }))
             .send()
+            .instrument(tracing::info_span!("sending request to vault"))
             .await
             .wrap_err("error sending request to vault")?
             .try_into_vault_error()
@@ -66,6 +69,7 @@ impl Client {
         })
     }
 
+    #[tracing::instrument(skip(self, moodle_token))]
     pub async fn put_moodle_token(&self, moodle_token: &Secret<String>) -> Result<(), VaultError> {
         self.http_client
             .post(format!(
@@ -88,6 +92,7 @@ impl Client {
         Ok(())
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn get_moodle_token(&self) -> Result<Secret<String>, VaultError> {
         let res = self
             .http_client
