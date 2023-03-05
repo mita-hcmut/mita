@@ -15,11 +15,10 @@ pub async fn get_info(vault: Extension<vault::Client>, state: State<AppState>) -
 
     // get info from moodle url
     let res = state
-        .0
         .http_client
         .post(format!(
             "{}/webservice/rest/server.php",
-            state.0.config.moodle.url
+            state.config.moodle.url
         ))
         .form(&[
             ("wstoken", res.expose_secret().as_str()),

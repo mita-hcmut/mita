@@ -22,7 +22,7 @@ pub async fn authenticate<B>(
     next: Next<B>,
 ) -> Result<Response, AuthError> {
     let vault =
-        vault::Client::login(&state.0.http_client, &state.0.config.vault.url, &id_token.0).await?;
+        vault::Client::login(&state.http_client, &state.config.vault.url, &id_token.0).await?;
     req.extensions_mut().insert(vault);
     Ok(next.run(req).await)
 }
