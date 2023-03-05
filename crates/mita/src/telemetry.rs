@@ -10,28 +10,30 @@ use tower_http::{
     ServiceBuilderExt,
 };
 use tracing::Span;
-use tracing_chrome::{ChromeLayerBuilder, FlushGuard};
+use tracing_error::ErrorLayer;
 use tracing_subscriber::{
     filter::{EnvFilter, LevelFilter},
-    fmt::format,
     prelude::*,
 };
+use tracing_tree::HierarchicalLayer;
 
-pub fn setup() -> FlushGuard {
+pub struct Guard;
+
+pub fn setup() -> Guard {
+    color_eyre::install().expect("error setting color_eyre as global panic handler");
+
     let env_filter = EnvFilter::builder()
-        .with_default_directive(LevelFilter::INFO.into())
+        .with_default_directive(LevelFilter::OFF.into())
         .from_env()
         .expect("error parsing tracing filter");
 
-    let (chrome_layer, _guard) = ChromeLayerBuilder::new().build();
-
     tracing_subscriber::registry()
-        .with(chrome_layer)
         .with(env_filter)
-        .with(tracing_subscriber::fmt::layer().with_span_events(format::FmtSpan::FULL))
+        .with(HierarchicalLayer::default())
+        .with(ErrorLayer::default())
         .init();
 
-    _guard
+    Guard
 }
 
 // extract the type so that clippy wont yell at me
