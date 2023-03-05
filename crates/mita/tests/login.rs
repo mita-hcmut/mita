@@ -95,7 +95,7 @@ async fn shoud_400_when_invalid_token_provided() -> eyre::Result<()> {
 #[tokio::test]
 async fn shoud_404_when_unregistered_token_provided() -> eyre::Result<()> {
     let mut app = TestApp::new().await?;
-    app.id_token = helper::oauth2::get_code("guest", "").await.id_token;
+    app.id_token = helper::oauth2::get_code("khang", "").await.id_token;
     let res = app.get_info().await?;
 
     assert_eq!(res.status(), 404);

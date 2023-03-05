@@ -15,7 +15,7 @@ done
 vault login root
 
 cat << EOF | vault policy write kv-policy -
-path "secret/data/{{identity.entity.id}}" {
+path "secret/data/{{identity.entity.id}}/*" {
   capabilities = ["create", "read", "update", "patch", "delete", "list"]
 }
 EOF

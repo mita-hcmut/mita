@@ -19,10 +19,13 @@ impl TestApp {
             telemetry::setup();
         });
 
+        let uuid = uuid::Uuid::new_v4();
+
         let moodle_server = MockServer::start().await;
 
         let mut config = Config::test()?;
         config.moodle.url = format!("http://{}", moodle_server.address());
+        config.vault.path = format!("/token-test-{}", uuid);
         let server = Server::build(config.leak()).await?;
 
         let addr = server.addr();
@@ -55,5 +58,11 @@ impl TestApp {
             .send()
             .await
             .wrap_err("error getting user info")
+    }
+}
+
+impl Drop for TestApp {
+    fn drop(&mut self) {
+        // TODO: clean up vault path
     }
 }

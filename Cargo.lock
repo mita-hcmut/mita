@@ -1078,6 +1078,7 @@ dependencies = [
  "tracing-error",
  "tracing-subscriber",
  "tracing-tree",
+ "uuid",
  "wiremock",
 ]
 

@@ -6,9 +6,11 @@ use serde::Deserialize;
 use thiserror::Error;
 use tracing::Instrument;
 
+use crate::config::VaultConfig;
+
 #[derive(Clone)]
 pub struct Client {
-    url: &'static str,
+    config: &'static VaultConfig,
     http_client: reqwest::Client,
     client_token: ClientToken,
     entity_id: EntityId,
@@ -29,14 +31,14 @@ pub enum VaultError {
 }
 
 impl Client {
-    #[tracing::instrument(skip(http_client, url, id_token))]
+    #[tracing::instrument(skip(http_client, config, id_token))]
     pub async fn login(
         http_client: &reqwest::Client,
-        url: &'static str,
+        config: &'static VaultConfig,
         id_token: &str,
     ) -> Result<Self, VaultError> {
         let res = http_client
-            .post(format!("{}/v1/auth/jwt/login", url))
+            .post(format!("{}/v1/auth/jwt/login", &config.url))
             .json(&serde_json::json!({
                 "role": "user",
                 "jwt": &id_token,
@@ -62,7 +64,7 @@ impl Client {
         let res: Response = res.json().await.wrap_err("could not read body as json")?;
 
         Ok(Self {
-            url,
+            config,
             http_client: http_client.clone(),
             client_token: ClientToken(res.auth.client_token),
             entity_id: EntityId(res.auth.entity_id),
@@ -73,9 +75,10 @@ impl Client {
     pub async fn put_moodle_token(&self, moodle_token: &Secret<String>) -> Result<(), VaultError> {
         self.http_client
             .post(format!(
-                "{}/v1/secret/data/{}",
-                self.url,
+                "{}/v1/secret/data/{}{}",
+                self.config.url,
                 self.entity_id.0.expose_secret(),
+                self.config.path
             ))
             .header("X-Vault-Token", self.client_token.0.expose_secret())
             .json(&serde_json::json!({
@@ -97,9 +100,10 @@ impl Client {
         let res = self
             .http_client
             .get(format!(
-                "{}/v1/secret/data/{}",
-                self.url,
+                "{}/v1/secret/data/{}{}",
+                self.config.url,
                 self.entity_id.0.expose_secret(),
+                self.config.path
             ))
             .header("X-Vault-Token", self.client_token.0.expose_secret())
             .send()
