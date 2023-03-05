@@ -110,3 +110,21 @@ async fn should_400_when_no_bearer_header() -> eyre::Result<()> {
     assert_eq!(res.status(), 400);
     Ok(())
 }
+
+#[tokio::test]
+pub async fn should_400_when_moodle_token_incorrect_length() -> eyre::Result<()> {
+    let mut app = TestApp::new().await?;
+    app.id_token = helper::oauth2::get_code("khang", "").await.id_token;
+
+    let mut runner = TestRunner::default();
+    let token = "[a-f0-9]{28}"
+        .new_tree(&mut runner)
+        .map_err(|e| eyre::eyre!(e))?
+        .current();
+
+    let res = app.put_token(token).await?;
+
+    assert_eq!(res.status(), 400);
+
+    Ok(())
+}

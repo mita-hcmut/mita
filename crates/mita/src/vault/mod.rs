@@ -7,7 +7,7 @@ use thiserror::Error;
 use tracing::{info_span, Instrument};
 use url::Url;
 
-use crate::config::VaultConfig;
+use crate::{config::VaultConfig, moodle::token::MoodleToken};
 
 #[derive(Clone)]
 pub struct Client {
@@ -73,7 +73,7 @@ impl Client {
     }
 
     #[tracing::instrument(skip(self, moodle_token))]
-    pub async fn put_moodle_token(&self, moodle_token: &Secret<String>) -> Result<(), VaultError> {
+    pub async fn put_moodle_token(&self, moodle_token: &MoodleToken) -> Result<(), VaultError> {
         self.http_client
             .post(self.data_path()?)
             .header("X-Vault-Token", self.client_token.0.expose_secret())
@@ -103,7 +103,7 @@ impl Client {
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn get_moodle_token(&self) -> Result<Secret<String>, VaultError> {
+    pub async fn get_moodle_token(&self) -> Result<MoodleToken, VaultError> {
         let res = self
             .http_client
             .get(self.data_path()?)
@@ -132,7 +132,13 @@ impl Client {
 
         let res: Response = res.json().await.wrap_err("could not read body as json")?;
 
-        Ok(res.data.data.moodle_token)
+        Ok(res
+            .data
+            .data
+            .moodle_token
+            .expose_secret()
+            .parse()
+            .wrap_err("malformed token inside vault")?)
     }
 }
 

@@ -1,6 +1,6 @@
 use axum::{response::IntoResponse, response::Response, Extension, Form};
 use reqwest::StatusCode;
-use secrecy::Secret;
+use secrecy::{ExposeSecret, Secret};
 use serde::Deserialize;
 use thiserror::Error;
 
@@ -17,7 +17,13 @@ pub async fn register_token(
     vault: Extension<vault::Client>,
     form: Form<FormData>,
 ) -> Result<StatusCode, RegisterError> {
-    vault.put_moodle_token(&form.moodle_token).await?;
+    let moodle_token = form
+        .moodle_token
+        .expose_secret()
+        .parse()
+        .map_err(RegisterError::ValidateToken)?;
+
+    vault.put_moodle_token(&moodle_token).await?;
 
     Ok(StatusCode::OK)
 }
@@ -26,12 +32,15 @@ pub async fn register_token(
 pub enum RegisterError {
     #[error("error putting moodle token")]
     PutMoodleToken(#[from] VaultError),
+    #[error("error validating token")]
+    ValidateToken(#[source] eyre::Error),
 }
 
 impl IntoResponse for RegisterError {
     fn into_response(self) -> Response {
         let status = match &self {
-            Self::PutMoodleToken(e) => e.status(),
+            RegisterError::PutMoodleToken(e) => e.status(),
+            RegisterError::ValidateToken(_) => StatusCode::BAD_REQUEST,
         };
         tracing::error!(service = "vault", %status, error = ?self);
         status.into_response()

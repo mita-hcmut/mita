@@ -1,27 +1,30 @@
-use eyre::Context;
+use std::ops::Deref;
+
+use eyre::WrapErr;
+use secrecy::Secret;
 
 /// A token consists of 32 characters in `a..f` or `0..9`.
 ///
 /// This is stored as a 16-byte array.
 #[derive(Debug)]
-pub struct MoodleToken([u8; 16]);
+pub struct MoodleToken(Secret<String>);
+
+impl Deref for MoodleToken {
+    type Target = Secret<String>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 impl std::str::FromStr for MoodleToken {
     type Err = eyre::Report;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let bytes = hex::decode(s).wrap_err("moodle token is not a hex string")?;
-        Ok(Self(
-            (*bytes)
-                .try_into()
-                .wrap_err("moodle token has incorrect length")?,
-        ))
-    }
-}
-
-impl AsRef<[u8]> for MoodleToken {
-    fn as_ref(&self) -> &[u8] {
-        &self.0
+        <[u8; 16]>::try_from(bytes)
+            .map_err(|_| eyre::eyre!("moodle token is not at correct length"))?;
+        Ok(Self(Secret::new(s.to_string())))
     }
 }
 
