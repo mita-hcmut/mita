@@ -18,7 +18,7 @@ impl Server {
         let pool = SqlitePoolOptions::new()
             .max_connections(5)
             .acquire_timeout(Duration::from_secs(5))
-            .connect(&config.database.url)
+            .connect(&config.database.connection_string)
             .await?;
 
         sqlx::migrate!("../../db/migrations").run(&pool).await?;

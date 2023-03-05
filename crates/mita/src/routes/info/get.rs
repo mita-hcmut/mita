@@ -23,10 +23,14 @@ pub async fn get_info(
     // get info from moodle url
     let res = state
         .http_client
-        .post(format!(
-            "{}/webservice/rest/server.php",
-            state.config.moodle.url
-        ))
+        .post(
+            state
+                .config
+                .moodle
+                .url
+                .join("webservice/rest/server.php")
+                .unwrap(),
+        )
         .form(&[
             ("wstoken", res.expose_secret().as_str()),
             ("wsfunction", "core_webservice_get_site_info"),

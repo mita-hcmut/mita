@@ -3,6 +3,7 @@ use figment::{
     providers::{Env, Format, Serialized, Toml},
     Figment,
 };
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
@@ -22,24 +23,24 @@ pub struct AppConfig {
 
 #[derive(Deserialize, Serialize)]
 pub struct DatabaseConfig {
-    pub url: String,
+    pub connection_string: String,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct VaultConfig {
-    pub url: String,
-    pub path: String,
+    pub url: Url,
+    pub suffix_path: String,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct OAuth2Config {
-    pub url: String,
+    pub url: Url,
     pub client_id: String,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct MoodleConfig {
-    pub url: String,
+    pub url: Url,
 }
 
 impl Config {

@@ -5,6 +5,7 @@ use secrecy::{ExposeSecret, Secret};
 use serde::Deserialize;
 use thiserror::Error;
 use tracing::Instrument;
+use url::Url;
 
 use crate::config::VaultConfig;
 
@@ -38,7 +39,7 @@ impl Client {
         id_token: &str,
     ) -> Result<Self, VaultError> {
         let res = http_client
-            .post(format!("{}/v1/auth/jwt/login", &config.url))
+            .post(config.url.join("v1/auth/jwt/login").unwrap())
             .json(&serde_json::json!({
                 "role": "user",
                 "jwt": &id_token,
@@ -74,12 +75,7 @@ impl Client {
     #[tracing::instrument(skip(self, moodle_token))]
     pub async fn put_moodle_token(&self, moodle_token: &Secret<String>) -> Result<(), VaultError> {
         self.http_client
-            .post(format!(
-                "{}/v1/secret/data/{}{}",
-                self.config.url,
-                self.entity_id.0.expose_secret(),
-                self.config.path
-            ))
+            .post(self.data_path()?)
             .header("X-Vault-Token", self.client_token.0.expose_secret())
             .json(&serde_json::json!({
                 "data": {
@@ -95,16 +91,21 @@ impl Client {
         Ok(())
     }
 
+    pub fn data_path(&self) -> Result<Url, VaultError> {
+        let mut url = self.config.url.clone();
+        url.path_segments_mut()
+            .map_err(|_| eyre::eyre!("vault url not a base"))?
+            .extend(&["v1", "secret", "data", self.entity_id.0.expose_secret(), ""]);
+        Ok(url
+            .join(&self.config.suffix_path)
+            .wrap_err("cannot construct vault path")?)
+    }
+
     #[tracing::instrument(skip(self))]
     pub async fn get_moodle_token(&self) -> Result<Secret<String>, VaultError> {
         let res = self
             .http_client
-            .get(format!(
-                "{}/v1/secret/data/{}{}",
-                self.config.url,
-                self.entity_id.0.expose_secret(),
-                self.config.path
-            ))
+            .get(self.data_path()?)
             .header("X-Vault-Token", self.client_token.0.expose_secret())
             .send()
             .await

@@ -24,8 +24,8 @@ impl TestApp {
         let moodle_server = MockServer::start().await;
 
         let mut config = Config::test()?;
-        config.moodle.url = format!("http://{}", moodle_server.address());
-        config.vault.path = format!("/token-test-{}", uuid);
+        config.moodle.url = moodle_server.uri().parse().unwrap();
+        config.vault.suffix_path = format!("token-test-{}", uuid);
         let server = Server::build(config.leak()).await?;
 
         let addr = server.addr();
@@ -58,11 +58,5 @@ impl TestApp {
             .send()
             .await
             .wrap_err("error getting user info")
-    }
-}
-
-impl Drop for TestApp {
-    fn drop(&mut self) {
-        // TODO: clean up vault path
     }
 }

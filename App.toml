@@ -3,12 +3,11 @@ hostname = "127.0.0.1"
 port = 8080
 
 [default.database]
-url = "sqlite::memory:"
-secure = false
+connection_string = "sqlite::memory:"
 
 [default.vault]
 url = "http://localhost:8200"
-path = "/token" # prefixed with /v1/secret/data/{entity.id}
+suffix_path = "token"         # prefixed with /v1/secret/data/{entity.id}
 
 [default.moodle]
 url = "http://localhost:0" # should be set using mock server
