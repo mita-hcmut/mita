@@ -56,6 +56,13 @@ impl Config {
             .wrap_err("error reading dev config")
     }
 
+    pub fn production() -> eyre::Result<Self> {
+        Config::figment()
+            .select("production")
+            .extract()
+            .wrap_err("error reading prod config")
+    }
+
     pub fn test() -> eyre::Result<Self> {
         Figment::from(Serialized::defaults(Config::dev()?))
             .merge(Config::figment().select("test"))

@@ -1,3 +1,5 @@
+use std::env;
+
 use eyre::Context;
 use mita::{config::Config, entrypoint::Server, telemetry};
 
@@ -5,7 +7,13 @@ use mita::{config::Config, entrypoint::Server, telemetry};
 async fn main() -> eyre::Result<()> {
     telemetry::setup();
 
-    let config = Config::dev().wrap_err("error reading config")?.leak();
+    let config = if env::var("RUST_ENV") == Ok("production".into()) {
+        Config::production()
+    } else {
+        Config::dev()
+    }
+    .wrap_err("error reading config")?
+    .leak();
 
     Server::build(config)
         .await

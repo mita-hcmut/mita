@@ -23,4 +23,14 @@ client_id = "client_id"
 
 # PROD PROFILE
 
-# TODO
+[production.app]
+hostname = "0.0.0.0"
+port = 8080
+
+[production.database]
+connection_string = "sqlite:///data/db.sqlite?mode=rwc"
+
+[production.vault]
+
+[production.moodle]
+url = "https://e-learning.hcmut.edu.vn"
