@@ -76,4 +76,27 @@ mod tests {
 
         Ok(())
     }
+
+    #[tokio::test]
+    async fn doesnt_crash_on_unexpected_code() -> eyre::Result<()> {
+        let mock = MockServer::start().await;
+
+        Mock::given(any())
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "errorcode": "ohsnap",
+                "message": "oh snap",
+            })))
+            .expect(1)
+            .mount(&mock)
+            .await;
+
+        let res = reqwest::get(&mock.uri())
+            .await?
+            .moodle_json::<InfoResponse>()
+            .await;
+
+        claims::assert_err!(res);
+
+        Ok(())
+    }
 }
