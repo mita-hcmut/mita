@@ -11,10 +11,11 @@ use crate::config::MoodleConfig;
 
 use self::{error::MoodleError, json_response::MoodleJson, token::MoodleToken};
 
+#[derive(Clone)]
 pub struct Client {
-    pub http_client: reqwest::Client,
-    pub config: &'static MoodleConfig,
-    pub moodle_token: MoodleToken,
+    http_client: reqwest::Client,
+    config: &'static MoodleConfig,
+    moodle_token: MoodleToken,
 }
 
 impl Client {
@@ -40,8 +41,8 @@ impl Client {
     pub async fn get_info(&self) -> Result<InfoResponse, MoodleError> {
         let res = self
             .http_client
-            .get(self.config.url.join("webservice/rest/server.php").unwrap())
-            .query(&[
+            .post(self.url()?)
+            .form(&[
                 ("wstoken", self.moodle_token.expose_secret().as_str()),
                 ("wsfunction", "core_webservice_get_site_info"),
                 ("moodlewsrestformat", "json"),
@@ -51,10 +52,18 @@ impl Client {
             .await
             .wrap_err("error sending request to moodle")?;
 
-        Ok(res
-            .moodle_json()
-            .await
-            .wrap_err("error deserializing moodle response")?)
+        res.moodle_json().await
+    }
+
+    pub fn token(&self) -> &MoodleToken {
+        &self.moodle_token
+    }
+
+    pub fn url(&self) -> eyre::Result<url::Url> {
+        self.config
+            .url
+            .join("webservice/rest/server.php")
+            .wrap_err("invalid moodle url")
     }
 }
 

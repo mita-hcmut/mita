@@ -1,67 +1,39 @@
 use axum::{
-    extract::State,
     response::{IntoResponse, Response},
-    Extension,
+    Extension, Json,
 };
-use reqwest::{header, StatusCode};
-use secrecy::ExposeSecret;
+use eyre::Context;
+use reqwest::StatusCode;
+use serde_json::json;
 use thiserror::Error;
 
-use crate::{
-    app_state::AppState,
-    vault::{self, VaultError},
-};
+use crate::moodle;
 
 #[axum::debug_handler]
-#[tracing::instrument(skip(vault, state))]
-pub async fn get_info(
-    vault: Extension<vault::Client>,
-    state: State<AppState>,
-) -> Result<Response, InfoError> {
-    let res = vault.get_moodle_token().await?;
-
-    // get info from moodle url
-    let res = state
-        .http_client
-        .post(
-            state
-                .config
-                .moodle
-                .url
-                .join("webservice/rest/server.php")
-                .unwrap(),
-        )
-        .form(&[
-            ("wstoken", res.expose_secret().as_str()),
-            ("wsfunction", "core_webservice_get_site_info"),
-            ("moodlewsrestformat", "json"),
-        ])
-        .send()
+#[tracing::instrument(skip(moodle))]
+pub async fn get_info(moodle: Extension<moodle::Client>) -> Result<Response, InfoError> {
+    // this should always succeed because the middleware should have already
+    // verified the token. if it fails, the moodle server is in a bad state
+    let info = moodle
+        .get_info()
         .await
-        .unwrap();
+        .wrap_err("error getting info from moodle")?;
 
-    let res = (
-        StatusCode::OK,
-        [(header::CONTENT_TYPE, "application/json")],
-        res.bytes().await.unwrap(),
-    )
-        .into_response();
-
-    Ok(res)
+    Ok(Json(json!({ "fullname": &info.fullname })).into_response())
 }
 
 #[derive(Error, Debug)]
 pub enum InfoError {
-    #[error("error getting moodle token")]
-    GetMoodleToken(#[from] VaultError),
+    #[error("unexpected error")]
+    Unexpected(#[from] eyre::Error),
 }
 
 impl IntoResponse for InfoError {
     fn into_response(self) -> Response {
         let status = match &self {
-            InfoError::GetMoodleToken(e) => e.status(),
+            InfoError::Unexpected(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
-        tracing::error!(service = "vault", %status, error = ?self);
+        tracing::error!(service = "moodle", %status, error = ?self);
         status.into_response()
     }
 }

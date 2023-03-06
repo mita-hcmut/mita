@@ -5,8 +5,19 @@ use secrecy::Secret;
 
 /// A token consists of 32 characters in `a..f` or `0..9`.
 ///
-/// This is stored as a 16-byte array.
-#[derive(Debug)]
+/// # Example
+///
+/// ```
+/// use mita::moodle::token::MoodleToken;
+/// use secrecy::ExposeSecret;
+///
+/// let secret = "a".repeat(32);
+/// let token = secret.parse::<MoodleToken>().unwrap();
+/// assert_eq!(token.expose_secret(), &secret);
+/// ```
+///
+
+#[derive(Clone, Debug)]
 pub struct MoodleToken(Secret<String>);
 
 impl Deref for MoodleToken {

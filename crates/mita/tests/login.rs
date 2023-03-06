@@ -6,7 +6,10 @@ use proptest::{
     test_runner::TestRunner,
 };
 use serde_json::{json, Value};
-use wiremock::{matchers, Mock, ResponseTemplate};
+use wiremock::{
+    matchers::{self, any},
+    Mock, ResponseTemplate,
+};
 
 use crate::helper::test_app::TestApp;
 
@@ -23,6 +26,7 @@ pub async fn put_token_and_get_info_successfully() -> eyre::Result<()> {
         .current();
 
     let fullname = fake::faker::name::en::Name().fake::<String>();
+
     Mock::given(matchers::method("POST"))
         .and(matchers::path("/webservice/rest/server.php"))
         .and(matchers::header(
@@ -37,7 +41,7 @@ pub async fn put_token_and_get_info_successfully() -> eyre::Result<()> {
         .respond_with(ResponseTemplate::new(200).set_body_json(&json!({
             "fullname": fullname,
         })))
-        .expect(1)
+        // TODO: test if api only called once
         .mount(&app.moodle_server)
         .await;
 
@@ -125,6 +129,35 @@ pub async fn should_400_when_moodle_token_incorrect_length() -> eyre::Result<()>
     let res = app.put_token(token).await?;
 
     assert_eq!(res.status(), 400);
+
+    Ok(())
+}
+
+#[tokio::test]
+pub async fn should_401_when_unknown_token() -> eyre::Result<()> {
+    let mut app = TestApp::new().await?;
+
+    let mut runner = TestRunner::default();
+    let token = "[a-f0-9]{32}"
+        .new_tree(&mut runner)
+        .map_err(|e| eyre::eyre!(e))?
+        .current();
+
+    Mock::given(any())
+        .respond_with(ResponseTemplate::new(200).set_body_json(&json!({
+            "errorcode": "invalidtoken",
+            "exception": "moodle_exception",
+            "message": "Invalid token - token not found",
+        })))
+        .expect(1)
+        .mount(&app.moodle_server)
+        .await;
+
+    app.id_token = helper::oauth2::get_code("khang", "").await.id_token;
+
+    let res = app.put_token(token).await?;
+
+    assert_eq!(res.status(), 401);
 
     Ok(())
 }
