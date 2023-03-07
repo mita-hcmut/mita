@@ -7,7 +7,8 @@ connection_string = "sqlite::memory:"
 
 [default.vault]
 url = "http://localhost:8200"
-suffix_path = "token"         # prefixed with /v1/secret/data/{entity.id}
+user_data_path = "user-data"
+user_data_version = "hk123"
 
 [default.moodle]
 url = "http://localhost:0" # should be set using mock server

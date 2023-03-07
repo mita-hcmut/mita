@@ -25,7 +25,7 @@ impl TestApp {
 
         let mut config = Config::test()?;
         config.moodle.url = moodle_server.uri().parse().unwrap();
-        config.vault.suffix_path = format!("token-test-{}", uuid);
+        config.vault.user_data_version = uuid.to_string();
         let server = Server::build(config.leak()).await?;
 
         let addr = server.addr();

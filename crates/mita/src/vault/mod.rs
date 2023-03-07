@@ -38,8 +38,14 @@ impl Client {
         config: &'static VaultConfig,
         id_token: &str,
     ) -> Result<Self, VaultError> {
+        let mut login_url = config.url.clone();
+        login_url
+            .path_segments_mut()
+            .map_err(|_| eyre::eyre!("vault url not a base"))?
+            .extend(["v1", "auth", &config.user_data_path, "login"]);
+
         let res = http_client
-            .post(config.url.join("v1/auth/jwt/login").unwrap())
+            .post(login_url)
             .json(&serde_json::json!({
                 "role": "user",
                 "jwt": &id_token,
@@ -96,10 +102,14 @@ impl Client {
         let mut url = self.config.url.clone();
         url.path_segments_mut()
             .map_err(|_| eyre::eyre!("vault url not a base"))?
-            .extend(&["v1", "secret", "data", self.entity_id.0.expose_secret(), ""]);
-        Ok(url
-            .join(&self.config.suffix_path)
-            .wrap_err("cannot construct vault path")?)
+            .extend([
+                "v1",
+                &self.config.user_data_path,
+                "data",
+                &self.config.user_data_version,
+                self.entity_id.0.expose_secret(),
+            ]);
+        Ok(dbg!(url))
     }
 
     #[tracing::instrument(skip(self))]
@@ -158,13 +168,18 @@ impl TryIntoVaultError for reqwest::Response {
 
         #[derive(Deserialize)]
         struct Body {
+            #[serde(default)]
             errors: Vec<String>,
+            #[serde(default)]
+            warnings: Vec<String>,
         }
 
-        let body: Body = self
+        let mut body: Body = self
             .json()
             .await
             .wrap_err("error deserializing error body")?;
+
+        body.errors.extend(body.warnings);
 
         Err(VaultError::Status(status, body.errors))
     }
