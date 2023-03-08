@@ -6,40 +6,37 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-async-trait = "0.1.66"
+async-trait = { workspace = true }
 axum = { version = "0.6.10", features = ["form", "macros"] }
-axum-auth = { version = "0.4.0", default-features = false, features = ["auth-bearer"] }
+axum-auth = { version = "0.4.0", default-features = false, features = [
+    "auth-bearer",
+] }
 color-eyre = "0.6.2"
-eyre = "0.6.8"
-figment = { version = "0.10.8", features = ["toml", "env"] }
+eyre = { workspace = true }
 futures = "0.3.26"
-hex = "0.4.3"
-jsonwebtoken = "8.2.0"
 mita-config = { version = "0.1.0", path = "../mita-config" }
 mita-moodle = { version = "0.1.0", path = "../mita-moodle" }
 mita-vault = { version = "0.1.0", path = "../mita-vault" }
 once_cell = "1.17.1"
-reqwest = { version = "0.11.14", features = ["json"] }
-secrecy = { version = "0.8.0", features = ["serde"] }
-serde = { version = "1.0.152", features = ["derive"] }
-serde-enum-str = "0.3.2"
-serde_json = "1.0.94"
+reqwest = { workspace = true }
+secrecy = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 sqlx = { version = "0.6.2", features = ["runtime-tokio-rustls", "sqlite"] }
-thiserror = "1.0.39"
-tokio = { version = "1.26.0", features = ["rt-multi-thread", "macros"] }
+thiserror = { workspace = true }
+tokio = { workspace = true }
 tower = "0.4.13"
 tower-http = { version = "0.4.0", features = ["trace", "request-id", "util"] }
-tracing = "0.1.37"
-tracing-chrome = "0.7.1"
+tracing = { workspace = true }
 tracing-error = "0.2.0"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 tracing-tree = "0.2.2"
-url = { version = "2.3.1", features = ["serde"] }
 uuid = { version = "1.3.0", features = ["v4"] }
 
 [dev-dependencies]
-claims = "0.7.1"
+claims = { workspace = true }
 fake = "2.5.0"
-proptest = "1.1.0"
+proptest = { workspace = true }
 rand = "0.8.5"
-wiremock = "0.5.17"
+wiremock = { workspace = true }
+jsonwebtoken = "8.2.0"

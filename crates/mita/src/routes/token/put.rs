@@ -1,10 +1,10 @@
 use axum::{extract::State, response::IntoResponse, response::Response, Extension, Form};
+use mita_moodle::error::MoodleError;
+use mita_vault::VaultError;
 use reqwest::StatusCode;
 use secrecy::{ExposeSecret, Secret};
 use serde::Deserialize;
 use thiserror::Error;
-use mita_moodle::error::MoodleError;
-use mita_vault::VaultError;
 
 use crate::app_state::AppState;
 
