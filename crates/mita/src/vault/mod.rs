@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use eyre::Context;
+use mita_config::VaultConfig;
 use reqwest::StatusCode;
 use secrecy::{ExposeSecret, Secret};
 use serde::Deserialize;
@@ -7,7 +8,7 @@ use thiserror::Error;
 use tracing::{info_span, Instrument};
 use url::Url;
 
-use crate::{config::VaultConfig, moodle::token::MoodleToken};
+use crate::moodle::token::MoodleToken;
 
 #[derive(Clone)]
 pub struct Client {

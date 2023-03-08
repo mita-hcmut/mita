@@ -1,7 +1,8 @@
 use std::{net::SocketAddr, sync::Once};
 
 use eyre::WrapErr;
-use mita::{config::Config, entrypoint::Server, telemetry};
+use mita::{entrypoint::Server, telemetry};
+use mita_config::Config;
 use wiremock::MockServer;
 
 static TRACING: Once = Once::new();

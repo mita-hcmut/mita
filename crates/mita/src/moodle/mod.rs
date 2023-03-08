@@ -7,7 +7,7 @@ use secrecy::ExposeSecret;
 use serde::Deserialize;
 use tracing::{info_span, Instrument};
 
-use crate::config::MoodleConfig;
+use mita_config::MoodleConfig;
 
 use self::{error::MoodleError, json_response::MoodleJson, token::MoodleToken};
 

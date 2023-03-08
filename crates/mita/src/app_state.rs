@@ -1,4 +1,4 @@
-use crate::config::Config;
+use mita_config::Config;
 
 #[derive(Clone)]
 pub struct AppState {

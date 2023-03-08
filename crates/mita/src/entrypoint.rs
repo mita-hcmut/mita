@@ -2,9 +2,10 @@ use std::{future::Future, net::SocketAddr, time::Duration};
 
 use eyre::WrapErr;
 use futures::future::BoxFuture;
+use mita_config::Config;
 use sqlx::sqlite::SqlitePoolOptions;
 
-use crate::{app_state::AppState, config::Config, routes::router::app_router};
+use crate::{app_state::AppState, routes::router::app_router};
 
 pub struct Server {
     addr: SocketAddr,
