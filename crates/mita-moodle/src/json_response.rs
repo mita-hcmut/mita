@@ -1,7 +1,7 @@
 use eyre::Context;
 use serde::{de::DeserializeOwned, Deserialize};
 
-use super::error::{MoodleApiError, MoodleError};
+use crate::error::{MoodleApiError, MoodleError};
 
 #[async_trait::async_trait]
 pub trait MoodleJson {
@@ -29,7 +29,7 @@ mod tests {
     use serde_json::json;
     use wiremock::{matchers::any, Mock, MockServer, ResponseTemplate};
 
-    use crate::{error::MoodleError, json_response::MoodleJson, InfoResponse};
+    use crate::{client::InfoResponse, error::MoodleError, json_response::MoodleJson};
 
     #[tokio::test]
     async fn deserialize_invalid_token() -> eyre::Result<()> {
