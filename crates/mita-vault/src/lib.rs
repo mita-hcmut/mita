@@ -8,7 +8,7 @@ use thiserror::Error;
 use tracing::{info_span, Instrument};
 use url::Url;
 
-use crate::moodle::token::MoodleToken;
+use mita_moodle::token::MoodleToken;
 
 #[derive(Clone)]
 pub struct Client {

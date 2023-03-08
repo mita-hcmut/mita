@@ -1,0 +1,26 @@
+[package]
+name = "mita-moodle"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-trait = "0.1.66"
+eyre = "0.6.8"
+hex = "0.4.3"
+mita-config = { version = "0.1.0", path = "../mita-config" }
+reqwest = "0.11.14"
+secrecy = "0.8.0"
+serde = "1.0.153"
+serde-enum-str = "0.3.2"
+thiserror = "1.0.39"
+tracing = "0.1.37"
+url = "2.3.1"
+
+[dev-dependencies]
+claims = "0.7.1"
+proptest = "1.1.0"
+serde_json = "1.0.94"
+tokio = { version = "1.26.0", features = ["macros"] }
+wiremock = "0.5.17"

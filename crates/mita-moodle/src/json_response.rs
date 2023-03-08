@@ -29,7 +29,7 @@ mod tests {
     use serde_json::json;
     use wiremock::{matchers::any, Mock, MockServer, ResponseTemplate};
 
-    use crate::moodle::{error::MoodleError, json_response::MoodleJson, InfoResponse};
+    use crate::{error::MoodleError, json_response::MoodleJson, InfoResponse};
 
     #[tokio::test]
     async fn deserialize_invalid_token() -> eyre::Result<()> {

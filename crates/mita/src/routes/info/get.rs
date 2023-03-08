@@ -7,11 +7,9 @@ use reqwest::StatusCode;
 use serde_json::json;
 use thiserror::Error;
 
-use crate::moodle;
-
 #[axum::debug_handler]
 #[tracing::instrument(skip(moodle))]
-pub async fn get_info(moodle: Extension<moodle::Client>) -> Result<Response, InfoError> {
+pub async fn get_info(moodle: Extension<mita_moodle::Client>) -> Result<Response, InfoError> {
     // this should always succeed because the middleware should have already
     // verified the token. if it fails, the moodle server is in a bad state
     let info = moodle
