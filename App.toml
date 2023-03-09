@@ -11,7 +11,7 @@ user_data_path = "user-data"
 user_data_version = "hk123"
 
 [default.moodle]
-url = "http://localhost:0" # should be set using mock server
+url = "https://5f12fc86-0602-4bf9-8b13-683d2fb0fe84.mock.pstmn.io"
 
 # TEST PROFILE
 
