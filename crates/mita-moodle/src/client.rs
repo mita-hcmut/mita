@@ -1,9 +1,9 @@
 use eyre::WrapErr;
 use secrecy::ExposeSecret;
-use serde::Deserialize;
-use tracing::{info_span, Instrument};
+use serde::{de::DeserializeOwned, Deserialize};
 
 use mita_config::MoodleConfig;
+use tracing::Instrument;
 
 use crate::{error::MoodleError, json_response::MoodleJson, token::MoodleToken};
 
@@ -34,23 +34,33 @@ impl Client {
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn get_info(&self) -> Result<InfoResponse, MoodleError> {
+    async fn request<R: DeserializeOwned>(
+        &self,
+        wsfunction: &str,
+        params: &[(&str, &str)],
+    ) -> Result<R, MoodleError> {
+        let mut params = Vec::from(params);
+        params.push(("wsfunction", wsfunction));
+        params.push(("moodlewsrestformat", "json"));
+
         let res = self
             .http_client
             .post(self.url()?)
             // move non-sensitive information to query for
             // better logging opportunities
-            .query(&[
-                ("wsfunction", "core_webservice_get_site_info"),
-                ("moodlewsrestformat", "json"),
-            ])
+            .query(&params)
             .form(&[("wstoken", self.moodle_token.expose_secret().as_str())])
             .send()
-            .instrument(info_span!("getting moodle info"))
+            .instrument(tracing::info_span!("sending http request"))
             .await
             .wrap_err("error sending request to moodle")?;
 
         res.moodle_json().await
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub async fn get_info(&self) -> Result<InfoResponse, MoodleError> {
+        self.request("core_webservice_get_site_info", &[]).await
     }
 
     pub fn token(&self) -> &MoodleToken {
