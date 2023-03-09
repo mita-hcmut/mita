@@ -8,7 +8,7 @@ use secrecy::Secret;
 /// # Example
 ///
 /// ```
-/// use mita::moodle::token::MoodleToken;
+/// use mita_moodle::MoodleToken;
 /// use secrecy::ExposeSecret;
 ///
 /// let secret = "a".repeat(32);

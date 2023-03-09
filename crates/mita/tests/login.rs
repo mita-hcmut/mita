@@ -34,10 +34,11 @@ pub async fn put_token_and_get_info_successfully() -> eyre::Result<()> {
             "application/x-www-form-urlencoded",
         ))
         .and(matchers::body_string_contains(format!("wstoken={token}")))
-        .and(matchers::body_string_contains(
-            "wsfunction=core_webservice_get_site_info",
+        .and(matchers::query_param(
+            "wsfunction",
+            "core_webservice_get_site_info",
         ))
-        .and(matchers::body_string_contains("moodlewsrestformat=json"))
+        .and(matchers::query_param("moodlewsrestformat", "json"))
         .respond_with(ResponseTemplate::new(200).set_body_json(&json!({
             "fullname": fullname,
         })))

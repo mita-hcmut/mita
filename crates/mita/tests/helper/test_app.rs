@@ -44,7 +44,7 @@ impl TestApp {
 
     pub async fn put_token_without_bearer(&self, token: String) -> eyre::Result<reqwest::Response> {
         self.http_client
-            .put(format!("http://{}/token", self.addr))
+            .put(format!("http://{}/api/v1/token", self.addr))
             .form(&[("moodle_token", &token)])
             .send()
             .await
@@ -53,7 +53,7 @@ impl TestApp {
 
     pub async fn put_token(&self, token: String) -> eyre::Result<reqwest::Response> {
         self.http_client
-            .put(format!("http://{}/token", self.addr))
+            .put(format!("http://{}/api/v1/token", self.addr))
             .bearer_auth(&self.id_token)
             .form(&[("moodle_token", &token)])
             .send()
@@ -63,7 +63,7 @@ impl TestApp {
 
     pub async fn get_info(&self) -> eyre::Result<reqwest::Response> {
         self.http_client
-            .get(format!("http://{}/info", self.addr))
+            .get(format!("http://{}/api/v1/info", self.addr))
             .bearer_auth(&self.id_token)
             .send()
             .await
