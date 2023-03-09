@@ -13,6 +13,7 @@ mita-config = { version = "0.1.0", path = "../mita-config" }
 reqwest = { workspace = true }
 secrecy = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 serde-enum-str = "0.3.2"
 thiserror = { workspace = true }
 tracing = { workspace = true }
@@ -21,6 +22,5 @@ url = { workspace = true }
 [dev-dependencies]
 claims = { workspace = true }
 proptest = { workspace = true }
-serde_json = { workspace = true }
 tokio = { workspace = true }
 wiremock = { workspace = true }

@@ -17,7 +17,12 @@ impl MoodleJson for reqwest::Response {
             Err(MoodleApiError),
             Ok(R),
         }
-        match self.json().await.wrap_err("error deserializing body")? {
+        let body: serde_json::Value = self
+            .json()
+            .await
+            .wrap_err("error deserializing body into json")?;
+        tracing::debug!("response body: {:#}", &body);
+        match serde_json::from_value(body).wrap_err("error deserializing json into struct")? {
             MoodleApiResponse::Ok(r) => Ok(r),
             MoodleApiResponse::Err(e) => Err(e.into()),
         }
