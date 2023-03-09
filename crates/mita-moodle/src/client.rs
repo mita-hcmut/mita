@@ -38,11 +38,13 @@ impl Client {
         let res = self
             .http_client
             .post(self.url()?)
-            .form(&[
-                ("wstoken", self.moodle_token.expose_secret().as_str()),
+            // move non-sensitive information to query for
+            // better logging opportunities
+            .query(&[
                 ("wsfunction", "core_webservice_get_site_info"),
                 ("moodlewsrestformat", "json"),
             ])
+            .form(&[("wstoken", self.moodle_token.expose_secret().as_str())])
             .send()
             .instrument(info_span!("getting moodle info"))
             .await
