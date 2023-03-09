@@ -14,6 +14,41 @@ pub struct Client {
     moodle_token: MoodleToken,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct InfoResponse {
+    pub fullname: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CoursesResponse {
+    pub courses: Vec<Course>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Course {
+    pub id: u32,
+    pub fullname: String,
+    #[serde(rename = "coursecategory")]
+    pub category: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ContentResponse(pub Vec<Section>);
+
+#[derive(Debug, Deserialize)]
+pub struct Section {
+    pub id: u32,
+    pub name: String,
+    pub modules: Vec<Module>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Module {
+    pub id: u32,
+    pub name: String,
+    pub modname: String,
+}
+
 impl Client {
     #[tracing::instrument(skip(http_client, config, moodle_token))]
     pub async fn new(
@@ -63,6 +98,24 @@ impl Client {
         self.request("core_webservice_get_site_info", &[]).await
     }
 
+    #[tracing::instrument(skip(self))]
+    pub async fn get_courses(&self) -> Result<CoursesResponse, MoodleError> {
+        self.request(
+            "core_courses_get_courses_by_classification",
+            &[("classification", "inprogress")],
+        )
+        .await
+    }
+
+    #[tracing::instrument(skip(self))]
+    pub async fn get_content(&self, courseid: u32) -> Result<ContentResponse, MoodleError> {
+        self.request(
+            "core_courses_get_contents",
+            &[("courseid", &courseid.to_string())],
+        )
+        .await
+    }
+
     pub fn token(&self) -> &MoodleToken {
         &self.moodle_token
     }
@@ -73,9 +126,4 @@ impl Client {
             .join("webservice/rest/server.php")
             .wrap_err("invalid moodle url")
     }
-}
-
-#[derive(Debug, Deserialize)]
-pub struct InfoResponse {
-    pub fullname: String,
 }
