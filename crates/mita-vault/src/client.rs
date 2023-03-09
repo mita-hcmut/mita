@@ -1,13 +1,13 @@
-use async_trait::async_trait;
 use eyre::Context;
-use reqwest::StatusCode;
+use mita_config::VaultConfig;
 use secrecy::{ExposeSecret, Secret};
 use serde::Deserialize;
-use thiserror::Error;
 use tracing::{info_span, Instrument};
 use url::Url;
 
-use crate::{config::VaultConfig, moodle::token::MoodleToken};
+use mita_moodle::MoodleToken;
+
+use crate::error::{TryIntoVaultError, VaultError};
 
 #[derive(Clone)]
 pub struct Client {
@@ -23,14 +23,6 @@ struct ClientToken(pub Secret<String>);
 #[derive(Clone, Deserialize)]
 struct EntityId(pub Secret<String>);
 
-#[derive(Error, Debug)]
-pub enum VaultError {
-    #[error("unexpected error: {0}")]
-    Unexpected(#[source] eyre::Error),
-    #[error("status {0}, errors: {1:?}")]
-    Status(StatusCode, Vec<String>),
-}
-
 impl Client {
     #[tracing::instrument(skip(http_client, config, id_token))]
     pub async fn login(
@@ -38,8 +30,14 @@ impl Client {
         config: &'static VaultConfig,
         id_token: &str,
     ) -> Result<Self, VaultError> {
+        let mut login_url = config.url.clone();
+        login_url
+            .path_segments_mut()
+            .map_err(|_| eyre::eyre!("vault url not a base"))?
+            .extend(["v1", "auth", &config.user_data_path, "login"]);
+
         let res = http_client
-            .post(config.url.join("v1/auth/jwt/login").unwrap())
+            .post(login_url)
             .json(&serde_json::json!({
                 "role": "user",
                 "jwt": &id_token,
@@ -96,10 +94,14 @@ impl Client {
         let mut url = self.config.url.clone();
         url.path_segments_mut()
             .map_err(|_| eyre::eyre!("vault url not a base"))?
-            .extend(&["v1", "secret", "data", self.entity_id.0.expose_secret(), ""]);
-        Ok(url
-            .join(&self.config.suffix_path)
-            .wrap_err("cannot construct vault path")?)
+            .extend([
+                "v1",
+                &self.config.user_data_path,
+                "data",
+                &self.config.user_data_version,
+                self.entity_id.0.expose_secret(),
+            ]);
+        Ok(dbg!(url))
     }
 
     #[tracing::instrument(skip(self))]
@@ -139,48 +141,5 @@ impl Client {
             .expose_secret()
             .parse()
             .wrap_err("malformed token inside vault")?)
-    }
-}
-
-#[async_trait]
-trait TryIntoVaultError: Sized {
-    async fn try_into_vault_error(self) -> Result<Self, VaultError>;
-}
-
-#[async_trait]
-impl TryIntoVaultError for reqwest::Response {
-    async fn try_into_vault_error(self) -> Result<Self, VaultError> {
-        if self.error_for_status_ref().is_ok() {
-            return Ok(self);
-        }
-
-        let status = self.status();
-
-        #[derive(Deserialize)]
-        struct Body {
-            errors: Vec<String>,
-        }
-
-        let body: Body = self
-            .json()
-            .await
-            .wrap_err("error deserializing error body")?;
-
-        Err(VaultError::Status(status, body.errors))
-    }
-}
-
-impl VaultError {
-    pub fn status(&self) -> StatusCode {
-        match self {
-            &Self::Status(status, _) => status,
-            _ => StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
-}
-
-impl From<eyre::Error> for VaultError {
-    fn from(v: eyre::Error) -> Self {
-        Self::Unexpected(v)
     }
 }

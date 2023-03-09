@@ -8,22 +8,20 @@ use axum::{
 use reqwest::StatusCode;
 use thiserror::Error;
 
-use crate::{
-    app_state::AppState,
-    moodle::{self, error::MoodleError},
-    vault::{self, VaultError},
-};
+use crate::app_state::AppState;
+use mita_moodle::{self, error::MoodleError};
+use mita_vault::{self, VaultError};
 
 #[tracing::instrument(skip(vault, state, req, next))]
 pub async fn build_moodle_client<B>(
-    vault: Extension<vault::Client>,
+    vault: Extension<mita_vault::Client>,
     state: State<AppState>,
     mut req: Request<B>,
     next: Next<B>,
 ) -> Result<Response, BuildMoodleError> {
     let token = vault.get_moodle_token().await?;
 
-    let moodle = moodle::Client::new(&state.http_client, &state.config.moodle, token).await?;
+    let moodle = mita_moodle::Client::new(&state.http_client, &state.config.moodle, token).await?;
 
     req.extensions_mut().insert(moodle);
 

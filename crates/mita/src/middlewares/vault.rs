@@ -7,10 +7,8 @@ use axum::{
 use axum_auth::AuthBearer;
 use thiserror::Error;
 
-use crate::{
-    app_state::AppState,
-    vault::{self, VaultError},
-};
+use crate::app_state::AppState;
+use mita_vault::VaultError;
 
 #[tracing::instrument(skip(state, id_token, req, next))]
 pub async fn authenticate<B>(
@@ -19,7 +17,8 @@ pub async fn authenticate<B>(
     mut req: Request<B>,
     next: Next<B>,
 ) -> Result<Response, AuthError> {
-    let vault = vault::Client::login(&state.http_client, &state.config.vault, &id_token.0).await?;
+    let vault =
+        mita_vault::Client::login(&state.http_client, &state.config.vault, &id_token.0).await?;
     req.extensions_mut().insert(vault);
     Ok(next.run(req).await)
 }

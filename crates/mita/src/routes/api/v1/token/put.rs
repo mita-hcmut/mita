@@ -1,14 +1,12 @@
 use axum::{extract::State, response::IntoResponse, response::Response, Extension, Form};
+use mita_moodle::error::MoodleError;
+use mita_vault::VaultError;
 use reqwest::StatusCode;
 use secrecy::{ExposeSecret, Secret};
 use serde::Deserialize;
 use thiserror::Error;
 
-use crate::{
-    app_state::AppState,
-    moodle::{self, error::MoodleError},
-    vault::{self, VaultError},
-};
+use crate::app_state::AppState;
 
 #[derive(Deserialize)]
 pub struct FormData {
@@ -18,7 +16,7 @@ pub struct FormData {
 #[axum::debug_handler]
 #[tracing::instrument(skip(vault, state, form))]
 pub async fn register_token(
-    vault: Extension<vault::Client>,
+    vault: Extension<mita_vault::Client>,
     state: State<AppState>,
     form: Form<FormData>,
 ) -> Result<StatusCode, RegisterError> {
@@ -30,7 +28,7 @@ pub async fn register_token(
 
     // verify token by making a request to moodle
     let moodle =
-        moodle::Client::new(&state.http_client, &state.config.moodle, moodle_token).await?;
+        mita_moodle::Client::new(&state.http_client, &state.config.moodle, moodle_token).await?;
 
     vault.put_moodle_token(moodle.token()).await?;
 

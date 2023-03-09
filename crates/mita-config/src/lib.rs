@@ -29,7 +29,8 @@ pub struct DatabaseConfig {
 #[derive(Deserialize, Serialize)]
 pub struct VaultConfig {
     pub url: Url,
-    pub suffix_path: String,
+    pub user_data_path: String,
+    pub user_data_version: String,
 }
 
 #[derive(Deserialize, Serialize)]

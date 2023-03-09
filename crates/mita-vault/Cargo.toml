@@ -1,0 +1,19 @@
+[package]
+name = "mita-vault"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-trait = { workspace = true }
+eyre = { workspace = true }
+mita-moodle = { version = "0.1.0", path = "../mita-moodle" }
+mita-config = { version = "0.1.0", path = "../mita-config" }
+reqwest = { workspace = true }
+secrecy = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+url = { workspace = true }
+serde_json = { workspace = true }

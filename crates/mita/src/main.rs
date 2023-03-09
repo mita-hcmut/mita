@@ -1,7 +1,8 @@
 use std::env;
 
 use eyre::Context;
-use mita::{config::Config, entrypoint::Server, telemetry};
+use mita::{entrypoint::Server, telemetry};
+use mita_config::Config;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {

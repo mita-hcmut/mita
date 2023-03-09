@@ -1,7 +1,7 @@
 use eyre::Context;
 use serde::{de::DeserializeOwned, Deserialize};
 
-use super::error::{MoodleApiError, MoodleError};
+use crate::error::{MoodleApiError, MoodleError};
 
 #[async_trait::async_trait]
 pub trait MoodleJson {
@@ -17,7 +17,12 @@ impl MoodleJson for reqwest::Response {
             Err(MoodleApiError),
             Ok(R),
         }
-        match self.json().await.wrap_err("error deserializing body")? {
+        let body: serde_json::Value = self
+            .json()
+            .await
+            .wrap_err("error deserializing body into json")?;
+        tracing::debug!("response body: {:#}", &body);
+        match serde_json::from_value(body).wrap_err("error deserializing json into struct")? {
             MoodleApiResponse::Ok(r) => Ok(r),
             MoodleApiResponse::Err(e) => Err(e.into()),
         }
@@ -29,7 +34,7 @@ mod tests {
     use serde_json::json;
     use wiremock::{matchers::any, Mock, MockServer, ResponseTemplate};
 
-    use crate::moodle::{error::MoodleError, json_response::MoodleJson, InfoResponse};
+    use crate::{client::InfoResponse, error::MoodleError, json_response::MoodleJson};
 
     #[tokio::test]
     async fn deserialize_invalid_token() -> eyre::Result<()> {

@@ -2,6 +2,7 @@
 
 set -e
 set -u
+set -x
 set -o pipefail
 
 vault_addr="vault:8200"
@@ -14,21 +15,24 @@ done
 
 vault login root
 
-cat << EOF | vault policy write kv-policy -
-path "secret/data/{{identity.entity.id}}/*" {
+user_data_path="user-data"
+
+cat << EOF | vault policy write moodle-policy -
+path "$user_data_path/data/+/{{identity.entity.id}}" {
   capabilities = ["create", "read", "update", "patch", "delete", "list"]
 }
 EOF
 
-vault auth enable jwt
+vault secrets enable -path=$user_data_path kv-v2 || true
+vault auth enable -path=$user_data_path jwt || true
 
 until wget -q --spider http://$oauth2_addr/isalive ; do
     >&2 echo "waiting for oauth container..."
     sleep 1
 done
 
-vault write auth/jwt/config oidc_discovery_url=http://$oauth2_addr/default
+vault write auth/$user_data_path/config oidc_discovery_url=http://$oauth2_addr/default
 
-vault write auth/jwt/role/user bound_audiences=client_id user_claim=sub role_type=jwt policies=kv-policy
+vault write auth/$user_data_path/role/user bound_audiences=client_id user_claim=sub role_type=jwt policies=moodle-policy
 
-vault token revoke -self
+# vault token revoke -self
